@@ -51,7 +51,7 @@ def send_to_discord(webhook_url, user_info):
         "**Company:**\n\n",
         f"`{user_info['company']}`\n\n",
         "**Website:**\n\n",
-        f"`{user_info['website']}`\n\n",
+        f"`{user_info['website']}`\n\n"
     ]
     
     for message in messages:
