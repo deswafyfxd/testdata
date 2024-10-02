@@ -40,18 +40,18 @@ def generate_available_username():
 # Send info to Discord
 def send_to_discord(webhook_url, user_info):
     messages = [
-        "**Name:**",
-        f"`{user_info['name']}`",
-        "**Username:**",
-        f"`{user_info['username']}`",
-        "**Bio:**",
-        f"`{user_info['bio']}`",
-        "**Location:**",
-        f"`{user_info['location']}`",
-        "**Company:**",
-        f"`{user_info['company']}`",
-        "**Website:**",
-        f"`{user_info['website']}`"
+        "**Name:**\n\n",
+        f"`{user_info['name']}`\n\n",
+        "**Username:**\n\n",
+        f"`{user_info['username']}`\n\n",
+        "**Bio:**\n\n",
+        f"`{user_info['bio']}`\n\n",
+        "**Location:**\n\n",
+        f"`{user_info['location']}`\n\n",
+        "**Company:**\n\n",
+        f"`{user_info['company']}`\n\n",
+        "**Website:**\n\n",
+        f"`{user_info['website']}`\n\n"
     ]
     
     for message in messages:
