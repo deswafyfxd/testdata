@@ -40,18 +40,12 @@ def generate_available_username():
 # Send info to Discord
 def send_to_discord(webhook_url, user_info):
     messages = [
-        f"**Name:**\n"
-“`{user_info['name']}`",
-        f"**Username:**\n”
-“`{user_info['username']}`",
-        f"**Bio:**\n”
-“`{user_info['bio']}`",
-        f"**Location:**\n”
-“`{user_info['location']}`",
-        f"**Company:**\n”
-“`{user_info['company']}`",
-        f"**Website:**\n”
-“`{user_info['website']}`"
+        f"**Name:**\n\n`{user_info['name']}`",
+        f"**Username:**\n\n`{user_info['username']}`",
+        f"**Bio:**\n\n`{user_info['bio']}`",
+        f"**Location:**\n\n`{user_info['location']}`",
+        f"**Company:**\n\n`{user_info['company']}`",
+        f"**Website:**\n\n`{user_info['website']}`"
     ]
     
     for message in messages:
@@ -78,7 +72,7 @@ def send_to_discord(webhook_url, user_info):
     if response.status_code == 204:
         print("Successfully sent to Discord")
     else:
-        print(f"Failed to send to Discord: {response.status_code}")
+        print("Failed to send to Discord: {response.status_code}")
 
 if __name__ == "__main__":
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
