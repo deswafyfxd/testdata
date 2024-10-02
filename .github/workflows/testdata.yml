@@ -28,4 +28,4 @@ jobs:
     - name: Run script
       run: python generate_user_info.py
       env:
-        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        DISCORD_WEBHOOK_URL: ${{ secrets.discord }}
