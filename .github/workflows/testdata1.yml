@@ -1,48 +1,31 @@
-from faker import Faker
-import requests
-import json
-import os
+name: Generate and Send User Info
 
-# Initialize Faker
-fake = Faker('en_IN')
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 0 * * *'  # Runs daily at midnight
 
-# Generate random user info
-def generate_user_info():
-    user_info = {
-        "name": fake.name(),
-        "username": fake.user_name(),
-        "bio": fake.sentence(nb_words=10),
-        "location": fake.city(),
-        "company": fake.company(),
-        "website": fake.url(),
-        "image_url": "https://picsum.photos/400/400"
-    }
-    return user_info
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-# Send info to Discord
-def send_to_discord(webhook_url, user_info):
-    data = {
-        "content": json.dumps(user_info, indent=4),
-        "embeds": [
-            {
-                "title": user_info["name"],
-                "description": user_info["bio"],
-                "image": {
-                    "url": user_info["image_url"]
-                }
-            }
-        ]
-    }
-    response = requests.post(webhook_url, json=data)
-    if response.status_code == 204:
-        print("Successfully sent to Discord")
-    else:
-        print(f"Failed to send to Discord: {response.status_code}")
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-if __name__ == "__main__":
-    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
-    if webhook_url:
-        user_info = generate_user_info()
-        send_to_discord(webhook_url, user_info)
-    else:
-        print("Discord webhook URL not found in environment variables.")
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install requests faker
+
+    - name: Run script
+      run: python generate_user_info.py
+      env:
+        DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
