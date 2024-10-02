@@ -29,6 +29,6 @@ def send_to_discord(webhook_url, user_info):
         print(f"Failed to send to Discord: {response.status_code}")
 
 if __name__ == "__main__":
-    webhook_url = "YOUR_DISCORD_WEBHOOK_URL"
+    webhook_url = "discord"
     user_info = generate_user_info()
     send_to_discord(webhook_url, user_info)
