@@ -1,6 +1,7 @@
 from faker import Faker
 import requests
 import json
+import os
 
 # Initialize Faker
 fake = Faker('en_IN')
@@ -29,6 +30,9 @@ def send_to_discord(webhook_url, user_info):
         print(f"Failed to send to Discord: {response.status_code}")
 
 if __name__ == "__main__":
-    webhook_url = "discord"
-    user_info = generate_user_info()
-    send_to_discord(webhook_url, user_info)
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+    if webhook_url:
+        user_info = generate_user_info()
+        send_to_discord(webhook_url, user_info)
+    else:
+        print("Discord webhook URL not found in environment variables.")
