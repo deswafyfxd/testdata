@@ -6,6 +6,7 @@ import random
 
 # Initialize Faker
 fake = Faker('en_IN')
+fake_global = Faker()
 
 # Generate random user info
 def generate_user_info():
@@ -15,10 +16,17 @@ def generate_user_info():
         "bio": fake.sentence(nb_words=10),
         "location": fake.city(),
         "company": fake.company(),
-        "website": fake.url(),
+        "website": generate_website(),
         "image_url": f"https://picsum.photos/400/400?random={random.randint(1, 10000)}"
     }
     return user_info
+
+# Generate a website URL
+def generate_website():
+    website = fake.url()
+    if not website:
+        website = fake_global.url()
+    return website
 
 # Check if GitHub username is available
 def is_github_username_available(username):
