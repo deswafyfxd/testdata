@@ -41,12 +41,12 @@ def generate_available_username():
 def send_to_discord(webhook_url, user_info):
     data = {
         "content": (
-            f"**Name:** `{user_info['name']}`\n"
-            f"**Username:** `{user_info['username']}`\n"
-            f"**Bio:** `{user_info['bio']}`\n"
-            f"**Location:** `{user_info['location']}`\n"
-            f"**Company:** `{user_info['company']}`\n"
-            f"**Website:** `{user_info['website']}`\n"
+            f"**Name:** `{user_info['name']}`\n\n"
+            f"**Username:** `{user_info['username']}`\n\n"
+            f"**Bio:** `{user_info['bio']}`\n\n"
+            f"**Location:** `{user_info['location']}`\n\n"
+            f"**Company:** `{user_info['company']}`\n\n"
+            f"**Website:** `{user_info['website']}`\n\n"
         ),
         "embeds": [
             {
