@@ -15,7 +15,7 @@ def generate_user_info():
         "location": fake.city(),
         "company": fake.company(),
         "website": fake.url(),
-        "image_url": "https://source.unsplash.com/random/400x400"
+        "image_url": "https://picsum.photos/400/400"
     }
     return user_info
 
