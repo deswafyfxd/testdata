@@ -14,14 +14,24 @@ def generate_user_info():
         "bio": fake.sentence(nb_words=10),
         "location": fake.city(),
         "company": fake.company(),
-        "website": fake.url()
+        "website": fake.url(),
+        "image_url": "https://source.unsplash.com/random/400x400"
     }
     return user_info
 
 # Send info to Discord
 def send_to_discord(webhook_url, user_info):
     data = {
-        "content": json.dumps(user_info, indent=4)
+        "content": json.dumps(user_info, indent=4),
+        "embeds": [
+            {
+                "title": user_info["name"],
+                "description": user_info["bio"],
+                "image": {
+                    "url": user_info["image_url"]
+                }
+            }
+        ]
     }
     response = requests.post(webhook_url, json=data)
     if response.status_code == 204:
