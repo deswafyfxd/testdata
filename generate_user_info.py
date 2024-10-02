@@ -13,6 +13,7 @@ def generate_user_info():
     first_name = fake.first_name()
     last_name = fake.last_name()
     outlook_email = generate_available_outlook_email(first_name, last_name)
+    additional_emails = generate_additional_outlook_emails(outlook_email)
     user_info = {
         "name": f"{first_name} {last_name}",
         "username": generate_available_username(),
@@ -21,7 +22,8 @@ def generate_user_info():
         "company": fake.company(),
         "website": fake.url(),
         "image_url": f"https://picsum.photos/400/400?random={random.randint(1, 10000)}",
-        "outlook_email": outlook_email
+        "outlook_email": outlook_email,
+        "additional_emails": additional_emails
     }
     return user_info
 
@@ -60,6 +62,19 @@ def generate_available_outlook_email(first_name, last_name):
         if is_outlook_email_available(email):
             return email
 
+# Generate additional Outlook emails with random names
+def generate_additional_outlook_emails(base_email):
+    base_username = base_email.split('@')[0]
+    additional_emails = []
+    for _ in range(3):
+        random_name = fake.first_name().lower()
+        email = f"{base_username}+{random_name}@outlook.com"
+        additional_emails.append({
+            "email": email,
+            "github_username": generate_available_username()
+        })
+    return additional_emails
+
 # Log user info to a file
 def log_user_info(user_info):
     with open("user_info_log.txt", "a") as file:
@@ -84,7 +99,9 @@ def send_to_discord(webhook_url, user_info):
         "**Website:**\n\n",
         f"{user_info['website']}\n\n",
         "**Outlook Email:**\n\n",
-        f"{user_info['outlook_email']}\n\n"
+        f"{user_info['outlook_email']}\n\n",
+        "**Additional Emails:**\n\n",
+        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
     ]
     
     for message in messages:
