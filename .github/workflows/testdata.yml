@@ -1,4 +1,4 @@
-name: Generate Random Profile Info and Send to Discord and Telegram
+name: Generate Unique Indian Profile Info and Send to Discord
 
 on:
   push:
@@ -20,48 +20,17 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Dependencies
-        run: pip install requests faker jq
+      - name: Install Faker
+        run: pip install faker
 
-      - name: Generate Random Info and Image
+      - name: Generate Random Info
         id: generate_info
         run: |
           python -c "
           from faker import Faker
-          import requests
           import json
-          import random
-          import time
-
           fake = Faker('en_IN')
-          email_available = False
-          attempts = 0
-          max_attempts = 10
-
-          while not email_available and attempts < max_attempts:
-              first_name = fake.first_name()
-              last_name = fake.last_name()
-              email = f'{first_name.lower()}{last_name.lower()}@outlook.com'
-              response = requests.get(f'https://outlook.live.com/owa/?path=/mail/signup&email={email}')
-              if 'This email address is already taken' not in response.text:
-                  email_available = True
-              else:
-                  attempts += 1
-                  time.sleep(1)  # To avoid rapid requests
-
-          if not email_available:
-              while not email_available:
-                  first_name = fake.first_name()
-                  last_name = fake.last_name()
-                  random_digits = random.randint(10, 99)
-                  email = f'{first_name.lower()}{last_name.lower()}{random_digits}@outlook.com'
-                  response = requests.get(f'https://outlook.live.com/owa/?path=/mail/signup&email={email}')
-                  if 'This email address is already taken' not in response.text:
-                      email_available = True
-                  else:
-                      time.sleep(1)  # To avoid rapid requests
-
-          github_data = {
+          data = {
               'name': fake.name(),
               'username': fake.user_name(),
               'bio': fake.sentence(nb_words=10),
@@ -69,40 +38,12 @@ jobs:
               'company': fake.company(),
               'website': fake.url()
           }
-
-          outlook_data = {
-              'first_name': first_name,
-              'last_name': last_name,
-              'email': email
-          }
-
-          data = {
-              'github': github_data,
-              'outlook': outlook_data,
-              'image_url': 'https://source.unsplash.com/random/400x400'
-          }
-
           print(f'::set-output name=data::{json.dumps(data)}')
-          " || echo "Python script failed"
+          "
 
       - name: Send to Discord
-        if: secrets.DISCORD_WEBHOOK_URL != ''
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          data="${{ steps.generate_info.outputs.data }}"
-          curl -H 'Content-Type: application/json' -d "$data" $DISCORD_WEBHOOK_URL || echo "Failed to send to Discord"
-
-      - name: Send to Telegram
-        if: secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          data="${{ steps.generate_info.outputs.data }}"
-          image_url=$(echo "$data" | jq -r '.image_url')
-          github_data=$(echo "$data" | jq -r '.github')
-          outlook_data=$(echo "$data" | jq -r '.outlook')
-          message=$(echo "$github_data" | jq -r '"Name: \(.name)\nUsername: \(.username)\nBio: \(.bio)\nLocation: \(.location)\nCompany: \(.company)\nWebsite: \(.website)"')
-          outlook_message=$(echo "$outlook_data" | jq -r '"First Name: \(.first_name)\nLast Name: \(.last_name)\nEmail: \(.email)"')
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendPhoto" -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} -F photo="$image_url" -F caption="$message\n\n$outlook_message" || echo "Failed to send to Telegram"
+          data=${{ steps.generate_info.outputs.data }}
+          curl -H 'Content-Type: application/json' -d "$data" $DISCORD_WEBHOOK_URL
