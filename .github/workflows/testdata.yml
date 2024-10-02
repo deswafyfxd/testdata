@@ -86,6 +86,7 @@ jobs:
           " || echo "Python script failed"
 
       - name: Send to Discord
+        if: secrets.DISCORD_WEBHOOK_URL != ''
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
@@ -93,6 +94,7 @@ jobs:
           curl -H 'Content-Type: application/json' -d "$data" $DISCORD_WEBHOOK_URL || echo "Failed to send to Discord"
 
       - name: Send to Telegram
+        if: secrets.TELEGRAM_BOT_TOKEN != '' && secrets.TELEGRAM_CHAT_ID != ''
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
