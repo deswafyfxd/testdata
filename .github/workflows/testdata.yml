@@ -21,7 +21,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install Dependencies
-        run: pip install requests faker
+        run: pip install requests faker jq
 
       - name: Generate Random Info and Image
         id: generate_info
@@ -83,13 +83,13 @@ jobs:
           }
 
           print(f'::set-output name=data::{json.dumps(data)}')
-          "
+          " || echo "Python script failed"
 
       - name: Send to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          data=${{ steps.generate_info.outputs.data }}
+          data="${{ steps.generate_info.outputs.data }}"
           curl -H 'Content-Type: application/json' -d "$data" $DISCORD_WEBHOOK_URL || echo "Failed to send to Discord"
 
       - name: Send to Telegram
@@ -97,10 +97,10 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: |
-          data=${{ steps.generate_info.outputs.data }}
-          image_url=$(echo $data | jq -r '.image_url')
-          github_data=$(echo $data | jq -r '.github')
-          outlook_data=$(echo $data | jq -r '.outlook')
-          message=$(echo $github_data | jq -r '"Name: \(.name)\nUsername: \(.username)\nBio: \(.bio)\nLocation: \(.location)\nCompany: \(.company)\nWebsite: \(.website)"')
-          outlook_message=$(echo $outlook_data | jq -r '"First Name: \(.first_name)\nLast Name: \(.last_name)\nEmail: \(.email)"')
-          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendPhoto" -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} -F photo=$image_url -F caption="$message\n\n$outlook_message" || echo "Failed to send to Telegram"
+          data="${{ steps.generate_info.outputs.data }}"
+          image_url=$(echo "$data" | jq -r '.image_url')
+          github_data=$(echo "$data" | jq -r '.github')
+          outlook_data=$(echo "$data" | jq -r '.outlook')
+          message=$(echo "$github_data" | jq -r '"Name: \(.name)\nUsername: \(.username)\nBio: \(.bio)\nLocation: \(.location)\nCompany: \(.company)\nWebsite: \(.website)"')
+          outlook_message=$(echo "$outlook_data" | jq -r '"First Name: \(.first_name)\nLast Name: \(.last_name)\nEmail: \(.email)"')
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendPhoto" -F chat_id=${{ secrets.TELEGRAM_CHAT_ID }} -F photo="$image_url" -F caption="$message\n\n$outlook_message" || echo "Failed to send to Telegram"
