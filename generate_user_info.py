@@ -3,6 +3,7 @@ import requests
 import json
 import os
 import random
+import apprise
 
 # Initialize Faker
 fake = Faker('en_IN')
@@ -37,8 +38,11 @@ def generate_available_username():
         if is_github_username_available(username):
             return username
 
-# Send info to Discord
+# Send info to Discord using Apprise
 def send_to_discord(webhook_url, user_info):
+    apobj = apprise.Apprise()
+    apobj.add(webhook_url)
+
     messages = [
         "**Name:**\n\n",
         f"`{user_info['name']}`\n\n",
@@ -55,12 +59,10 @@ def send_to_discord(webhook_url, user_info):
     ]
     
     for message in messages:
-        data = {
-            "content": message
-        }
-        response = requests.post(webhook_url, json=data)
-        if response.status_code != 204:
-            print(f"Failed to send to Discord: {response.status_code}")
+        apobj.notify(
+            body=message,
+            title="User Info"
+        )
     
     # Send the image as an embed
     embed_data = {
