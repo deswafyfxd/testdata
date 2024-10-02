@@ -2,6 +2,7 @@ from faker import Faker
 import requests
 import json
 import os
+import random
 
 # Initialize Faker
 fake = Faker('en_IN')
@@ -10,7 +11,7 @@ fake = Faker('en_IN')
 def generate_user_info():
     user_info = {
         "name": fake.name(),
-        "username": fake.user_name(),
+        "username": generate_available_username(),
         "bio": fake.sentence(nb_words=10),
         "location": fake.city(),
         "company": fake.company(),
@@ -18,6 +19,23 @@ def generate_user_info():
         "image_url": "https://picsum.photos/400/400"
     }
     return user_info
+
+# Check if GitHub username is available
+def is_github_username_available(username):
+    response = requests.get(f"https://api.github.com/users/{username}")
+    return response.status_code == 404
+
+# Generate an available GitHub username
+def generate_available_username():
+    for _ in range(10):
+        username = fake.user_name()
+        if is_github_username_available(username):
+            return username
+    # If no available username found, append two random digits
+    while True:
+        username = f"{fake.user_name()}{random.randint(10, 99)}"
+        if is_github_username_available(username):
+            return username
 
 # Send info to Discord
 def send_to_discord(webhook_url, user_info):
