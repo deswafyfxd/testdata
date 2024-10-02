@@ -39,15 +39,25 @@ def generate_available_username():
 
 # Send info to Discord
 def send_to_discord(webhook_url, user_info):
-    data = {
-        "content": (
-            f"**Name:** `{user_info['name']}`\n\n"
-            f"**Username:** `{user_info['username']}`\n\n"
-            f"**Bio:** `{user_info['bio']}`\n\n"
-            f"**Location:** `{user_info['location']}`\n\n"
-            f"**Company:** `{user_info['company']}`\n\n"
-            f"**Website:** `{user_info['website']}`\n\n"
-        ),
+    messages = [
+        f"**Name:** `{user_info['name']}`",
+        f"**Username:** `{user_info['username']}`",
+        f"**Bio:** `{user_info['bio']}`",
+        f"**Location:** `{user_info['location']}`",
+        f"**Company:** `{user_info['company']}`",
+        f"**Website:** `{user_info['website']}`"
+    ]
+    
+    for message in messages:
+        data = {
+            "content": message
+        }
+        response = requests.post(webhook_url, json=data)
+        if response.status_code != 204:
+            print(f"Failed to send to Discord: {response.status_code}")
+    
+    # Send the image as an embed
+    embed_data = {
         "embeds": [
             {
                 "title": user_info["name"],
@@ -58,7 +68,7 @@ def send_to_discord(webhook_url, user_info):
             }
         ]
     }
-    response = requests.post(webhook_url, json=data)
+    response = requests.post(webhook_url, json=embed_data)
     if response.status_code == 204:
         print("Successfully sent to Discord")
     else:
