@@ -61,7 +61,7 @@ def send_to_discord(webhook_url, user_info):
     for message in messages:
         apobj.notify(
             body=message,
-            title="User Info"
+            title=""
         )
     
     # Send the image as an embed
