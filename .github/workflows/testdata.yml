@@ -41,7 +41,7 @@ jobs:
           while not email_available and attempts < max_attempts:
               first_name = fake.first_name()
               last_name = fake.last_name()
-              email = f'{first_name.lower()}.{last_name.lower()}@outlook.com'
+              email = f'{first_name.lower()}{last_name.lower()}@outlook.com'
               response = requests.get(f'https://outlook.live.com/owa/?path=/mail/signup&email={email}')
               if 'This email address is already taken' not in response.text:
                   email_available = True
@@ -54,7 +54,7 @@ jobs:
                   first_name = fake.first_name()
                   last_name = fake.last_name()
                   random_digits = random.randint(10, 99)
-                  email = f'{first_name.lower()}.{last_name.lower()}{random_digits}@outlook.com'
+                  email = f'{first_name.lower()}{last_name.lower()}{random_digits}@outlook.com'
                   response = requests.get(f'https://outlook.live.com/owa/?path=/mail/signup&email={email}')
                   if 'This email address is already taken' not in response.text:
                       email_available = True
