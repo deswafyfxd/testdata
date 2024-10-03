@@ -107,11 +107,12 @@ def log_user_info(user_info):
     return file_name
 
 # Send info to Discord using Apprise
-def send_to_discord(webhook_url, user_info, include_image_info=True):
-    file_name = log_user_info(user_info)
+def send_to_discord(webhook_url, user_info, include_image_info=True, attachment_path=None):
     webhook = DiscordWebhook(url=webhook_url)
-    with open(file_name, "rb") as f:
-        webhook.add_file(file=f.read(), filename=file_name)
+    
+    if attachment_path:
+        with open(attachment_path, "rb") as f:
+            webhook.add_file(file=f.read(), filename=os.path.basename(attachment_path))
     
     embed = DiscordEmbed(title="Generated User Information", description="Here is the generated user information.", color=242424)
     embed.add_embed_field(name="Name", value=user_info['name'])
@@ -230,10 +231,11 @@ if __name__ == "__main__":
         user_info = generate_user_info()
         
         if validate_user_info(user_info):
+            attachment_path = None
             if logging_enabled:
                 attachment_path = log_user_info(user_info)  # Log the user info and get the file path
             
-            send_to_discord(webhook_url, user_info, include_image_info)
+            send_to_discord(webhook_url, user_info, include_image_info, attachment_path)
             
             if telegram_enabled and telegram_bot_token and telegram_chat_id:
                 send_to_telegram(telegram_bot_token, telegram_chat_id, user_info)
@@ -249,4 +251,3 @@ if __name__ == "__main__":
             print("User info validation failed. Some fields are missing.")
     else:
         print("Discord webhook URL not found in environment variables.")
-
