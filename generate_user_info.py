@@ -15,6 +15,7 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from discord_webhook import DiscordWebhook, DiscordEmbed
 
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
@@ -107,45 +108,27 @@ def log_user_info(user_info):
 
 # Send info to Discord using Apprise
 def send_to_discord(webhook_url, user_info, include_image_info=True):
-    apobj = apprise.Apprise()
-    apobj.add(webhook_url)
-
-    messages = [
-        "**Name:**\n\n",
-        f"{user_info['name']}\n\n",
-        "**Username:**\n\n",
-        f"{user_info['username']}\n\n",
-        "**Bio:**\n\n",
-        f"{user_info['bio']}\n\n",
-        "**Location:**\n\n",
-        f"{user_info['location']}\n\n",
-        "**Company:**\n\n",
-        f"{user_info['company']}\n\n",
-        "**Website:**\n\n",
-        f"{user_info['website']}\n\n",
-        "**Outlook Email:**\n\n",
-        f"{user_info['outlook_email']}\n\n",
-        "**Additional Emails:**\n\n",
-        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
-    ]
-
+    file_name = log_user_info(user_info)
+    webhook = DiscordWebhook(url=webhook_url)
+    with open(file_name, "rb") as f:
+        webhook.add_file(file=f.read(), filename=file_name)
+    
+    embed = DiscordEmbed(title="Generated User Information", description="Here is the generated user information.", color=242424)
+    embed.add_embed_field(name="Name", value=user_info['name'])
+    embed.add_embed_field(name="Username", value=user_info['username'])
+    embed.add_embed_field(name="Bio", value=user_info['bio'])
+    embed.add_embed_field(name="Location", value=user_info['location'])
+    embed.add_embed_field(name="Company", value=user_info['company'])
+    embed.add_embed_field(name="Website", value=user_info['website'])
+    embed.add_embed_field(name="Outlook Email", value=user_info['outlook_email'])
+    additional_emails = "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
+    embed.add_embed_field(name="Additional Emails", value=additional_emails)
     if include_image_info:
-        messages.extend([
-            "**Image Name:**\n\n",
-            "Random Image\n\n",
-            "**Image Description:**\n\n",
-            "This image is randomly generated from Picsum Photos.\n\n",
-            "**Image URL:**\n\n",
-            f"{user_info['image_url']}\n\n"
-        ])
-    else:
-        messages.append(f"**Image URL:**\n\n{user_info['image_url']}\n\n")
-
-    for message in messages:
-        apobj.notify(
-            body=message,
-            title=""
-        )
+        embed.add_embed_field(name="Image URL", value=user_info['image_url'])
+    
+    webhook.add_embed(embed)
+    response = webhook.execute()
+    return response
 
 # Send email with user info using OAuth2 (Gmail)
 def send_email_with_oauth2(user_info, recipient_email, attachment_path):
@@ -229,7 +212,6 @@ def send_email_with_outlook(user_info, recipient_email, attachment_path):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
@@ -267,3 +249,4 @@ if __name__ == "__main__":
             print("User info validation failed. Some fields are missing.")
     else:
         print("Discord webhook URL not found in environment variables.")
+
