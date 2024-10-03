@@ -34,3 +34,6 @@ jobs:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_ENABLED: true  # Set this to true or false
         LOGGING_ENABLED: true  # Set this to true or false
+        EMAIL_ENABLED: false  # Set this to true or false
+        RECIPIENT_EMAIL: ${{ secrets.RECIPIENT_EMAIL }}
+        INCLUDE_IMAGE_INFO: true  # Set this to true or false
