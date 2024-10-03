@@ -117,9 +117,15 @@ def send_to_discord(webhook_url, user_info, include_image_info=True):
 
     if include_image_info:
         messages.extend([
-            "**Image:**\n\n",
+            "**Image Name:**\n\n",
+            "Random Image\n\n",
+            "**Image Description:**\n\n",
+            "This image is randomly generated from Picsum Photos.\n\n",
+            "**Image URL:**\n\n",
             f"{user_info['image_url']}\n\n"
         ])
+    else:
+        messages.append(f"**Image URL:**\n\n{user_info['image_url']}\n\n")
 
     for message in messages:
         apobj.notify(
