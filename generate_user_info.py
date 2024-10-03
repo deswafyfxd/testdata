@@ -92,7 +92,7 @@ def log_user_info(user_info):
         file.write(json.dumps(user_info, indent=4))
 
 # Send info to Discord using Apprise
-def send_to_discord(webhook_url, user_info):
+def send_to_discord(webhook_url, user_info, include_image_info=True):
     apobj = apprise.Apprise()
     apobj.add(webhook_url)
 
@@ -112,10 +112,14 @@ def send_to_discord(webhook_url, user_info):
         "**Outlook Email:**\n\n",
         f"{user_info['outlook_email']}\n\n",
         "**Additional Emails:**\n\n",
-        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']]),
-        "**Image:**\n\n",
-        f"{user_info['image_url']}\n\n"
+        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
     ]
+
+    if include_image_info:
+        messages.extend([
+            "**Image:**\n\n",
+            f"{user_info['image_url']}\n\n"
+        ])
 
     for message in messages:
         apobj.notify(
@@ -134,6 +138,7 @@ if __name__ == "__main__":
     logging_enabled = os.getenv("LOGGING_ENABLED", "false").lower() == "true"
     email_enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
     recipient_email = os.getenv("RECIPIENT_EMAIL")
+    include_image_info = os.getenv("INCLUDE_IMAGE_INFO", "true").lower() == "true"
 
     if webhook_url:
         user_info = generate_user_info()
@@ -142,7 +147,7 @@ if __name__ == "__main__":
             if logging_enabled:
                 log_user_info(user_info)  # Log the user info
             
-            send_to_discord(webhook_url, user_info)
+            send_to_discord(webhook_url, user_info, include_image_info)
             
             if telegram_enabled and telegram_bot_token and telegram_chat_id:
                 send_to_telegram(telegram_bot_token, telegram_chat_id, user_info)
