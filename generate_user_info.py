@@ -4,7 +4,20 @@ import json
 import os
 import random
 import apprise
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from datetime import datetime
+import base64
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+
+# If modifying these SCOPES, delete the file token.json.
+SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 
 # Initialize Faker
 fake = Faker('en_IN')
@@ -90,6 +103,7 @@ def log_user_info(user_info):
     file_name = f"user_info_{user_info['username']}_{timestamp}.txt"
     with open(file_name, "w") as file:
         file.write(json.dumps(user_info, indent=4))
+    return file_name
 
 # Send info to Discord using Apprise
 def send_to_discord(webhook_url, user_info, include_image_info=True):
@@ -133,6 +147,89 @@ def send_to_discord(webhook_url, user_info, include_image_info=True):
             title=""
         )
 
+# Send email with user info using OAuth2 (Gmail)
+def send_email_with_oauth2(user_info, recipient_email, attachment_path):
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first time.
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                'credentials.json', SCOPES)
+            creds = flow.run_local_server(port=0)
+        # Save the credentials for the next run
+        with open('token.json', 'w') as token:
+            token.write(creds.to_json())
+
+    service = build('gmail', 'v1', credentials=creds)
+
+    message = MIMEMultipart()
+    message['to'] = recipient_email
+    message['subject'] = "Generated User Information"
+    body = json.dumps(user_info, indent=4)
+    message.attach(MIMEText(body, 'plain'))
+
+    # Attach the file
+    with open(attachment_path, "rb") as attachment:
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename= {os.path.basename(attachment_path)}",
+        )
+        message.attach(part)
+
+    raw = base64.urlsafe_b64encode(message.as_bytes()).decode()
+    message = {'raw': raw}
+
+    try:
+        message = (service.users().messages().send(userId="me", body=message).execute())
+        print(f"Message Id: {message['id']}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+# Send email with user info using Outlook
+def send_email_with_outlook(user_info, recipient_email, attachment_path):
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("SENDER_PASSWORD")  # Use the app password here
+
+    msg = MIMEMultipart()
+    msg['From'] = sender_email
+    msg['To'] = recipient_email
+    msg['Subject'] = "Generated User Information"
+
+    body = json.dumps(user_info, indent=4)
+    msg.attach(MIMEText(body, 'plain'))
+
+    # Attach the file
+    with open(attachment_path, "rb") as attachment:
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attachment.read())
+        encoders.encode_base64(part)
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename= {os.path.basename(attachment_path)}",
+        )
+        msg.attach(part)
+
+    try:
+        server = smtplib.SMTP('smtp.office365.com', 587)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        text = msg.as_string()
+        server.sendmail(sender_email, recipient_email, text)
+        server.quit()
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
@@ -145,13 +242,14 @@ if __name__ == "__main__":
     email_enabled = os.getenv("EMAIL_ENABLED", "false").lower() == "true"
     recipient_email = os.getenv("RECIPIENT_EMAIL")
     include_image_info = os.getenv("INCLUDE_IMAGE_INFO", "true").lower() == "true"
+    email_service = os.getenv("EMAIL_SERVICE", "gmail").lower()  # Default to Gmail
 
     if webhook_url:
         user_info = generate_user_info()
         
         if validate_user_info(user_info):
             if logging_enabled:
-                log_user_info(user_info)  # Log the user info
+                attachment_path = log_user_info(user_info)  # Log the user info and get the file path
             
             send_to_discord(webhook_url, user_info, include_image_info)
             
@@ -159,7 +257,12 @@ if __name__ == "__main__":
                 send_to_telegram(telegram_bot_token, telegram_chat_id, user_info)
             
             if email_enabled and recipient_email:
-                send_email(user_info, recipient_email)
+                if email_service == "gmail":
+                    send_email_with_oauth2(user_info, recipient_email, attachment_path)
+                elif email_service == "outlook":
+                    send_email_with_outlook(user_info, recipient_email, attachment_path)
+                else:
+                    print(f"Unsupported email service: {email_service}")
         else:
             print("User info validation failed. Some fields are missing.")
     else:
