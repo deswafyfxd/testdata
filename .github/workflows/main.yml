@@ -30,6 +30,10 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake
 
+    - name: Install setuptools
+      run: |
+        pip install setuptools
+
     - name: Install dependencies
       run: |
         pip install -r requirements.txt
