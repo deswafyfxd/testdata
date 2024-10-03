@@ -113,6 +113,26 @@ def send_to_discord(webhook_url, user_info, include_image_info=True, attachment_
     if attachment_path:
         with open(attachment_path, "rb") as f:
             webhook.add_file(file=f.read(), filename=os.path.basename(attachment_path))
+    else:
+        messages = [
+            "**Name:**\n\n",
+            f"{user_info['name']}\n\n",
+            "**Username:**\n\n",
+            f"{user_info['username']}\n\n",
+            "**Bio:**\n\n",
+            f"{user_info['bio']}\n\n",
+            "**Location:**\n\n",
+            f"{user_info['location']}\n\n",
+            "**Company:**\n\n",
+            f"{user_info['company']}\n\n",
+            "**Website:**\n\n",
+            f"{user_info['website']}\n\n",
+            "**Outlook Email:**\n\n",
+            f"{user_info['outlook_email']}\n\n",
+            "**Additional Emails:**\n\n",
+            "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
+        ]
+        webhook.content = "\n".join(messages)
     
     embed = DiscordEmbed(title="Generated User Information", description="Here is the generated user information.", color=242424)
     embed.add_embed_field(name="Name", value=user_info['name'])
@@ -202,7 +222,7 @@ def send_email_with_outlook(user_info, recipient_email, attachment_path):
         )
         msg.attach(part)
 
-    try:
+try:
         server = smtplib.SMTP('smtp.office365.com', 587)
         server.starttls()
         server.login(sender_email, sender_password)
