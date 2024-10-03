@@ -112,7 +112,9 @@ def send_to_discord(webhook_url, user_info):
         "**Outlook Email:**\n\n",
         f"{user_info['outlook_email']}\n\n",
         "**Additional Emails:**\n\n",
-        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
+        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']]),
+        "**Image:**\n\n",
+        f"{user_info['image_url']}\n\n"
     ]
 
     for message in messages:
