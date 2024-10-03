@@ -8,6 +8,7 @@ from datetime import datetime
 
 # Initialize Faker
 fake = Faker('en_IN')
+fake_en = Faker('en_US')  # Additional Faker instance for English text
 
 # Generate random user info
 def generate_user_info():
@@ -18,7 +19,7 @@ def generate_user_info():
     user_info = {
         "name": f"{first_name} {last_name}",
         "username": generate_available_username(),
-        "bio": fake.text(max_nb_chars=100),  # Generate bio in English
+        "bio": fake_en.text(max_nb_chars=100),  # Generate bio in English
         "location": fake.city(),
         "company": fake.company(),
         "website": fake.url(),
@@ -105,55 +106,7 @@ def send_to_discord(webhook_url, user_info):
         "**Additional Emails:**\n\n",
         "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
     ]
-    
-    for message in messages:
-        apobj.notify(
-            body=message,
-            title=""
-        )
-    
-    # Send the image as an embed
-    embed_data = {
-        "embeds": [
-            {
-                "title": user_info["name"],
-                "description": user_info["bio"],
-                "image": {
-                    "url": user_info["image_url"]
-                }
-            }
-        ]
-    }
-    response = requests.post(webhook_url, json=embed_data)
-    if response.status_code == 204:
-        print("Successfully sent to Discord")
-    else:
-        print(f"Failed to send to Discord: {response.status_code}")
 
-# Send info to Telegram using Apprise
-def send_to_telegram(bot_token, chat_id, user_info):
-    apobj = apprise.Apprise()
-    apobj.add(f'tgram://{bot_token}/{chat_id}')
-
-    messages = [
-        "**Name:**\n\n",
-        f"{user_info['name']}\n\n",
-        "**Username:**\n\n",
-        f"{user_info['username']}\n\n",
-        "**Bio:**\n\n",
-        f"{user_info['bio']}\n\n",
-        "**Location:**\n\n",
-        f"{user_info['location']}\n\n",
-        "**Company:**\n\n",
-        f"{user_info['company']}\n\n",
-        "**Website:**\n\n",
-        f"{user_info['website']}\n\n",
-        "**Outlook Email:**\n\n",
-        f"{user_info['outlook_email']}\n\n",
-        "**Additional Emails:**\n\n",
-        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
-    ]
-    
     for message in messages:
         apobj.notify(
             body=message,
