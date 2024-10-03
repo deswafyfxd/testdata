@@ -15,7 +15,6 @@ from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from discord_webhook import DiscordWebhook, DiscordEmbed
 
 # If modifying these SCOPES, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
@@ -107,49 +106,46 @@ def log_user_info(user_info):
     return file_name
 
 # Send info to Discord using Apprise
-def send_to_discord(webhook_url, user_info, include_image_info=True, attachment_path=None):
-    webhook = DiscordWebhook(url=webhook_url)
-    
-    if attachment_path:
-        with open(attachment_path, "rb") as f:
-            webhook.add_file(file=f.read(), filename=os.path.basename(attachment_path))
-    else:
-        messages = [
-            "**Name:**\n\n",
-            f"{user_info['name']}\n\n",
-            "**Username:**\n\n",
-            f"{user_info['username']}\n\n",
-            "**Bio:**\n\n",
-            f"{user_info['bio']}\n\n",
-            "**Location:**\n\n",
-            f"{user_info['location']}\n\n",
-            "**Company:**\n\n",
-            f"{user_info['company']}\n\n",
-            "**Website:**\n\n",
-            f"{user_info['website']}\n\n",
-            "**Outlook Email:**\n\n",
-            f"{user_info['outlook_email']}\n\n",
-            "**Additional Emails:**\n\n",
-            "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
-        ]
-        webhook.content = "\n".join(messages)
-    
-    embed = DiscordEmbed(title="Generated User Information", description="Here is the generated user information.", color=242424)
-    embed.add_embed_field(name="Name", value=user_info['name'])
-    embed.add_embed_field(name="Username", value=user_info['username'])
-    embed.add_embed_field(name="Bio", value=user_info['bio'])
-    embed.add_embed_field(name="Location", value=user_info['location'])
-    embed.add_embed_field(name="Company", value=user_info['company'])
-    embed.add_embed_field(name="Website", value=user_info['website'])
-    embed.add_embed_field(name="Outlook Email", value=user_info['outlook_email'])
-    additional_emails = "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
-    embed.add_embed_field(name="Additional Emails", value=additional_emails)
+def send_to_discord(webhook_url, user_info, include_image_info=True):
+    apobj = apprise.Apprise()
+    apobj.add(webhook_url)
+
+    messages = [
+        "**Name:**\n\n",
+        f"{user_info['name']}\n\n",
+        "**Username:**\n\n",
+        f"{user_info['username']}\n\n",
+        "**Bio:**\n\n",
+        f"{user_info['bio']}\n\n",
+        "**Location:**\n\n",
+        f"{user_info['location']}\n\n",
+        "**Company:**\n\n",
+        f"{user_info['company']}\n\n",
+        "**Website:**\n\n",
+        f"{user_info['website']}\n\n",
+        "**Outlook Email:**\n\n",
+        f"{user_info['outlook_email']}\n\n",
+        "**Additional Emails:**\n\n",
+        "\n".join([f"{email['email']} (GitHub: {email['github_username']})" for email in user_info['additional_emails']])
+    ]
+
     if include_image_info:
-        embed.add_embed_field(name="Image URL", value=user_info['image_url'])
-    
-    webhook.add_embed(embed)
-    response = webhook.execute()
-    return response
+        messages.extend([
+            "**Image Name:**\n\n",
+            "Random Image\n\n",
+            "**Image Description:**\n\n",
+            "This image is randomly generated from Picsum Photos.\n\n",
+            "**Image URL:**\n\n",
+            f"{user_info['image_url']}\n\n"
+        ])
+    else:
+        messages.append(f"**Image URL:**\n\n{user_info['image_url']}\n\n")
+
+    for message in messages:
+        apobj.notify(
+            body=message,
+            title=""
+        )
 
 # Send email with user info using OAuth2 (Gmail)
 def send_email_with_oauth2(user_info, recipient_email, attachment_path):
@@ -211,16 +207,16 @@ def send_email_with_outlook(user_info, recipient_email, attachment_path):
     body = json.dumps(user_info, indent=4)
     msg.attach(MIMEText(body, 'plain'))
 
-# Attach the file
+    # Attach the file
     with open(attachment_path, "rb") as attachment:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(attachment.read())
         encoders.encode_base64(part)
-    part.add_header(
-        "Content-Disposition",
-        f"attachment; filename= {os.path.basename(attachment_path)}",
-    )
-    msg.attach(part)
+        part.add_header(
+            "Content-Disposition",
+            f"attachment; filename= {os.path.basename(attachment_path)}",
+        )
+        msg.attach(part)
 
     try:
         server = smtplib.SMTP('smtp.office365.com', 587)
@@ -251,11 +247,10 @@ if __name__ == "__main__":
         user_info = generate_user_info()
         
         if validate_user_info(user_info):
-            attachment_path = None
             if logging_enabled:
                 attachment_path = log_user_info(user_info)  # Log the user info and get the file path
             
-            send_to_discord(webhook_url, user_info, include_image_info, attachment_path)
+            send_to_discord(webhook_url, user_info, include_image_info)
             
             if telegram_enabled and telegram_bot_token and telegram_chat_id:
                 send_to_telegram(telegram_bot_token, telegram_chat_id, user_info)
