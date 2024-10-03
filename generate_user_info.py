@@ -211,18 +211,18 @@ def send_email_with_outlook(user_info, recipient_email, attachment_path):
     body = json.dumps(user_info, indent=4)
     msg.attach(MIMEText(body, 'plain'))
 
-    # Attach the file
+# Attach the file
     with open(attachment_path, "rb") as attachment:
         part = MIMEBase("application", "octet-stream")
         part.set_payload(attachment.read())
         encoders.encode_base64(part)
-        part.add_header(
-            "Content-Disposition",
-            f"attachment; filename= {os.path.basename(attachment_path)}",
-        )
-        msg.attach(part)
+    part.add_header(
+        "Content-Disposition",
+        f"attachment; filename= {os.path.basename(attachment_path)}",
+    )
+    msg.attach(part)
 
-try:
+    try:
         server = smtplib.SMTP('smtp.office365.com', 587)
         server.starttls()
         server.login(sender_email, sender_password)
