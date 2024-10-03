@@ -29,6 +29,14 @@ def generate_user_info():
     }
     return user_info
 
+# Validate user info
+def validate_user_info(user_info):
+    required_fields = ["name", "username", "bio", "location", "company", "website", "image_url", "outlook_email", "additional_emails"]
+    for field in required_fields:
+        if not user_info.get(field):
+            return False
+    return True
+
 # Check if GitHub username is available
 def is_github_username_available(username):
     response = requests.get(f"https://api.github.com/users/{username}")
@@ -128,15 +136,18 @@ if __name__ == "__main__":
     if webhook_url:
         user_info = generate_user_info()
         
-        if logging_enabled:
-            log_user_info(user_info)  # Log the user info
-        
-        send_to_discord(webhook_url, user_info)
-        
-        if telegram_enabled and telegram_bot_token and telegram_chat_id:
-            send_to_telegram(telegram_bot_token, telegram_chat_id, user_info)
-        
-        if email_enabled and recipient_email:
-            send_email(user_info, recipient_email)
+        if validate_user_info(user_info):
+            if logging_enabled:
+                log_user_info(user_info)  # Log the user info
+            
+            send_to_discord(webhook_url, user_info)
+            
+            if telegram_enabled and telegram_bot_token and telegram_chat_id:
+                send_to_telegram(telegram_bot_token, telegram_chat_id, user_info)
+            
+            if email_enabled and recipient_email:
+                send_email(user_info, recipient_email)
+        else:
+            print("User info validation failed. Some fields are missing.")
     else:
         print("Discord webhook URL not found in environment variables.")
